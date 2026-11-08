@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "contract-tris-to-quads"
+authors:
+  - family-names: Lee
+    given-names: "K. S. Ernest (iFire)"
+license: MIT
+repository-code: "https://github.com/V-Sekai-fire/contract-tris-to-quads"
+references:
+  - type: software
+    title: "Optimized Tris to Quads Converter"
+    authors:
+      - name: Rulesobeyer
+    url: "https://github.com/Rulesobeyer/Optimized-Tris-to-Quads-Converter"
+  - type: software
+    title: "Tris-Quads-Ex"
+    authors:
+      - name: "Tsutomu Saito"
+    url: "https://github.com/SaitoTsutomu/Tris-Quads-Ex"

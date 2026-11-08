@@ -1,0 +1,51 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lean:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: core/lean
+      - name: build
+        working-directory: core/lean
+        run: lake build
+      - name: run tests
+        working-directory: core/lean
+        run: lake exe tris_to_quads_test
+
+  guest:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: install riscv64 cross toolchain
+        run: sudo apt-get update && sudo apt-get install -y gcc-14-riscv64-linux-gnu cmake ninja-build
+      - name: configure + build
+        working-directory: guest
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE=toolchain.cmake \
+            -DCMAKE_C_COMPILER=riscv64-linux-gnu-gcc-14
+          cmake --build build -j
+      - name: verify ELF shape
+        working-directory: guest/build
+        run: |
+          file tris_to_quads.elf | grep -q "RISC-V"
+          objcopy -O binary --only-section=.sandbox_variant tris_to_quads.elf /tmp/variant.bin
+          python3 -c "
+          d = open('/tmp/variant.bin','rb').read()
+          assert d[:4] == b'SBXV' and int.from_bytes(d[4:8],'little') == 40, d
+          print('sandbox_variant OK:', d)
+          "
+          for fn in tq_load_mesh tq_solve tq_dissolved_edge_at; do
+            objdump -t tris_to_quads.elf | grep -q "GLOBAL.*$fn" || { echo "MISSING $fn"; exit 1; }
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tris-to-quads-elf-${{ github.sha }}
+          path: guest/build/tris_to_quads.elf
